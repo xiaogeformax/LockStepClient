@@ -1,33 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 
 namespace Util
 {
-    // 定时触发器
+    /// <summary>
+    /// 定时触发器
+    /// </summary>
     public class TimerHeap
     {
-
         private static uint m_nNextTimerId;  //总的id，需要分配给task，也就是每加如一个task，就自增
         private static uint m_unTick;//总的时间，用来和task里面的nexttick变量来进行比较，看是否要触发任务
-
         private static KeyedPriorityQueue<uint, AbsTimerData, ulong> m_queue;
         private static Stopwatch m_stopWatch;
         private static readonly object m_queueLock = new object(); //队列锁
 
-
+        /// <summary>
         /// 私有构造函数，封闭实例化。
+        /// </summary>
         private TimerHeap() { }
 
+        /// <summary>
         /// 默认构造函数
+        /// </summary>
         static TimerHeap()
         {
             m_queue = new KeyedPriorityQueue<uint, AbsTimerData, ulong>();
             m_stopWatch = new Stopwatch();
         }
-
 
         /// <summary>
         /// 添加定时对象
@@ -44,6 +43,15 @@ namespace Util
             return AddTimer(p);
         }
 
+        /// <summary>
+        /// 添加定时对象
+        /// </summary>
+        /// <typeparam name="T">参数类型1</typeparam>
+        /// <param name="start">延迟启动时间。（毫秒）</param>
+        /// <param name="interval">重复间隔，为零不重复。（毫秒）</param>
+        /// <param name="handler">定时处理方法</param>
+        /// <param name="arg1">参数1</param>
+        /// <returns>定时对象Id</returns>
         public static uint AddTimer<T>(uint start, int interval, Action<T> handler, T arg1)
         {
             var p = GetTimerData(new TimerData<T>(), start, interval);
@@ -52,12 +60,46 @@ namespace Util
             return AddTimer(p);
         }
 
+        /// <summary>
+        /// 添加定时对象
+        /// </summary>
+        /// <typeparam name="T">参数类型1</typeparam>
+        /// <typeparam name="U">参数类型2</typeparam>
+        /// <param name="start">延迟启动时间。（毫秒）</param>
+        /// <param name="interval">重复间隔，为零不重复。（毫秒）</param>
+        /// <param name="handler">定时处理方法</param>
+        /// <param name="arg1">参数1</param>
+        /// <param name="arg2">参数2</param>
+        /// <returns>定时对象Id</returns>
         public static uint AddTimer<T, U>(uint start, int interval, Action<T, U> handler, T arg1, U arg2)
         {
             var p = GetTimerData(new TimerData<T, U>(), start, interval);
             p.Action = handler;
             p.Arg1 = arg1;
             p.Arg2 = arg2;
+            return AddTimer(p);
+        }
+
+        /// <summary>
+        /// 添加定时对象
+        /// </summary>
+        /// <typeparam name="T">参数类型1</typeparam>
+        /// <typeparam name="U">参数类型2</typeparam>
+        /// <typeparam name="V">参数类型3</typeparam>
+        /// <param name="start">延迟启动时间。（毫秒）</param>
+        /// <param name="interval">重复间隔，为零不重复。（毫秒）</param>
+        /// <param name="handler">定时处理方法</param>
+        /// <param name="arg1">参数1</param>
+        /// <param name="arg2">参数2</param>
+        /// <param name="arg3">参数3</param>
+        /// <returns>定时对象Id</returns>
+        public static uint AddTimer<T, U, V>(uint start, int interval, Action<T, U, V> handler, T arg1, U arg2, V arg3)
+        {
+            var p = GetTimerData(new TimerData<T, U, V>(), start, interval);
+            p.Action = handler;
+            p.Arg1 = arg1;
+            p.Arg2 = arg2;
+            p.Arg3 = arg3;
             return AddTimer(p);
         }
 
@@ -69,24 +111,6 @@ namespace Util
         {
             lock (m_queueLock)
                 m_queue.Remove(timerId);
-        }
-
-        public static uint AddTimer<T, U, V>(uint start, int interval, Action<T, U, V> handler, T arg1, U arg2, V arg3)
-        {
-            var p = GetTimerData(new TimerData<T, U, V>(), start, interval);
-            p.Action = handler;
-            p.Arg1 = arg1;
-            p.Arg2 = arg2;
-            p.Arg3 = arg3;
-            return AddTimer(p);
-        }
-
-
-        private static uint AddTimer(AbsTimerData p)
-        {
-            lock (m_queueLock)
-               // m_queue.Enqueue(p.NTimerId, p, p.UnNextTick);
-            return p.NTimerId;
         }
 
         /// <summary>
@@ -103,15 +127,12 @@ namespace Util
                 AbsTimerData p;
                 lock (m_queueLock)
                     p = m_queue.Peek();
-
                 if (m_unTick < p.UnNextTick)
                 {
                     break;
                 }
-
                 lock (m_queueLock)
                     m_queue.Dequeue();
-
                 if (p.NInterval > 0)
                 {
                     p.UnNextTick += (ulong)p.NInterval;
@@ -124,8 +145,25 @@ namespace Util
                     p.DoAction();
                 }
             }
+        }
 
+        /// <summary>
+        /// 重置定时触发器
+        /// </summary>
+        public static void Reset()
+        {
+            m_unTick = 0;
+            m_nNextTimerId = 0;
+            lock (m_queueLock)
+                while (m_queue.Count != 0)
+                    m_queue.Dequeue();
+        }
 
+        private static uint AddTimer(AbsTimerData p)
+        {
+            lock (m_queueLock)
+                m_queue.Enqueue(p.NTimerId, p, p.UnNextTick);
+            return p.NTimerId;
         }
 
         private static T GetTimerData<T>(T p, uint start, int interval) where T : AbsTimerData
@@ -135,6 +173,5 @@ namespace Util
             p.UnNextTick = m_unTick + 1 + start;
             return p;
         }
-
     }
 }

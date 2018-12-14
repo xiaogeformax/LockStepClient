@@ -47,6 +47,7 @@ namespace Game
             //设置偏移矢量
             m_deltaPos = delta;
 
+           
             //设置移动位置
             m_selfTransform.localPosition += new Vector3(m_deltaPos.x, m_deltaPos.y, 0);
         }
@@ -57,9 +58,10 @@ namespace Game
         /// <param name="go">点击的对象</param>
         private void OnPointerDownDelegate(GameObject go)
         {
+            //TODO: 
             //响应玩家控制类的对应函数
-           /* if (PlayerMoveController.moveStart != null)
-                PlayerMoveController.moveStart();*/
+            if (PlayerMoveController.moveStart != null)
+                PlayerMoveController.moveStart();
         }
 
         /// <summary>

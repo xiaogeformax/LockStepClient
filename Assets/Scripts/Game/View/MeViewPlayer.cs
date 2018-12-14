@@ -16,7 +16,7 @@ namespace Game
             //            gameGo = new GameObject();
             m_gameGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
             m_gameGo.name = charData.m_name;
-            //m_gameGo.AddComponent<PlayerMoveController>();
+            m_gameGo.AddComponent<PlayerMoveController>();
             m_gameTrans = m_gameGo.transform;
         }
     }

@@ -195,6 +195,7 @@ namespace Game
                     int cRoleId = msg.ReadInt();
                     string pos = msg.ReadString();
                     SceneManager.instance.viewMap.SyncPos(cRoleId, pos);
+                  
                     Debug.Log(string.Format("玩家 {0} ,pos = {1}", cRoleId, pos));
                     break;
                 case cProto.SYNC_KEY:
@@ -218,6 +219,10 @@ namespace Game
                 case cProto.START:
                     string players = msg.ReadString();
                     SceneManager.instance.viewMap.CreateAllPlayer(players);
+                    Debug.LogError("   start  =========================  ");
+
+
+
                     TimerHeap.AddTimer(0, 50, SycMePos);
                     TimerHeap.AddTimer(0, 100, SycKey);
                     break;
